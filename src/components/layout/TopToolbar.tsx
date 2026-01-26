@@ -4,6 +4,7 @@ import { auth } from '../../services/firebase';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Undo, Redo, Download, FileImage, FileCode, ChevronRight } from 'lucide-react';
 import { useHistoryStore } from '../../store/useHistoryStore';
+import { ShareButton } from '../collaboration/ShareButton';
 
 interface MenuItem {
     label: string;
@@ -213,8 +214,8 @@ export const TopToolbar: React.FC = () => {
                     onClick={handleUndo}
                     disabled={past.length === 0}
                     className={`p-1.5 rounded transition-colors ${past.length > 0
-                            ? 'hover:bg-neutral-100 text-neutral-700'
-                            : 'text-neutral-300 cursor-not-allowed'
+                        ? 'hover:bg-neutral-100 text-neutral-700'
+                        : 'text-neutral-300 cursor-not-allowed'
                         }`}
                     title="Undo (Ctrl+Z)"
                 >
@@ -226,13 +227,16 @@ export const TopToolbar: React.FC = () => {
                     onClick={handleRedo}
                     disabled={future.length === 0}
                     className={`p-1.5 rounded transition-colors ${future.length > 0
-                            ? 'hover:bg-neutral-100 text-neutral-700'
-                            : 'text-neutral-300 cursor-not-allowed'
+                        ? 'hover:bg-neutral-100 text-neutral-700'
+                        : 'text-neutral-300 cursor-not-allowed'
                         }`}
                     title="Redo (Ctrl+Shift+Z)"
                 >
                     <Redo className="w-4 h-4" />
                 </button>
+
+                {/* Share Button */}
+                <ShareButton />
 
                 {/* Export Menu */}
                 <div className="relative" ref={exportMenuRef}>
@@ -315,8 +319,8 @@ export const TopToolbar: React.FC = () => {
                                     key={index}
                                     onClick={item.onClick}
                                     className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 transition-colors ${item.danger
-                                            ? 'text-red-600 hover:bg-red-50'
-                                            : 'text-neutral-700 hover:bg-neutral-100'
+                                        ? 'text-red-600 hover:bg-red-50'
+                                        : 'text-neutral-700 hover:bg-neutral-100'
                                         }`}
                                 >
                                     <span className="text-base">{item.icon}</span>
