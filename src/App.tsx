@@ -1,14 +1,16 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useNavigate, useParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate, useParams, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './services/firebase';
 import { useAuthStore } from './store/useAuthStore';
 import { useCanvasSessionStore } from './store/useCanvasSessionStore';
-import { LoginScreen } from './components/auth/LoginScreen';
 import { MainLayout } from './components/layout/MainLayout';
 import { preloadPopularFonts } from './utils/googleFonts';
 import { createCanvasSession } from './services/firestoreSync';
+import { LandingPage } from './pages/LandingPage';
+import { AuthPage } from './pages/AuthPage';
+import { LauncherPage } from './pages/LauncherPage';
 
 const CanvasView: React.FC = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -107,22 +109,36 @@ const App: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-neutral-50">
-        <div className="text-lg text-neutral-600">Loading...</div>
+      <div className="flex items-center justify-center h-screen bg-dark">
+        <div className="text-lg text-accent animate-pulse">Loading Studio...</div>
       </div>
     );
-  }
-
-  if (!user) {
-    return <LoginScreen />;
   }
 
   return (
     <BrowserRouter>
       <Toaster position="bottom-right" />
       <Routes>
-        <Route path="/" element={<NewCanvas />} />
-        <Route path="/canvas/:sessionId" element={<CanvasView />} />
+        {/* Public Routes */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<AuthPage />} />
+        
+        {/* Protected Routes */}
+        <Route 
+          path="/launcher" 
+          element={user ? <LauncherPage /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/studio" 
+          element={user ? <NewCanvas /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/canvas/:sessionId" 
+          element={user ? <CanvasView /> : <Navigate to="/login" replace />} 
+        />
+        
+        {/* Redirect unknown routes */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

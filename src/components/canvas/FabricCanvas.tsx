@@ -22,6 +22,9 @@ export const FabricCanvas: React.FC = () => {
     const [isDrawing, setIsDrawing] = useState(false);
     const [currentShape, setCurrentShape] = useState<fabric.Object | null>(null);
     const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(null);
+    
+    // Smart Guides state
+    const [guides, setGuides] = useState<{ type: 'vertical' | 'horizontal', position: number }[]>([]);
 
     // Pen tool state
     const [penPath, setPenPath] = useState<fabric.Path | null>(null);
@@ -128,6 +131,100 @@ export const FabricCanvas: React.FC = () => {
         canvas.on('object:modified', () => {
             const objects = canvas.getObjects();
             syncToFirestore(objects);
+            setGuides([]); // Clear drawing guides
+        });
+
+        // Smart Snapping & Guides Logic (object:moving)
+        const SNAP_THRESHOLD = 5;
+        
+        canvas.on('object:moving', (e) => {
+            const obj = e.target;
+            if (!obj) return;
+
+            // 1. Sub-pixel rounding (Math.round)
+            let newLeft = Math.round(obj.left || 0);
+            let newTop = Math.round(obj.top || 0);
+
+            const activeGuides: { type: 'vertical' | 'horizontal', position: number }[] = [];
+            
+            if (canvas.width && canvas.height) {
+                const canvasCenter = { x: canvas.width / 2, y: canvas.height / 2 };
+                
+                // Visible bounding box of moving object
+                const objBounds = obj.getBoundingRect();
+                
+                // Get all other visible objects in viewport
+                const objects = canvas.getObjects().filter(o => o !== obj && o.visible);
+                
+                let snappedX = false;
+                let snappedY = false;
+
+                // Canvas Center Snapping
+                if (Math.abs(objBounds.left + objBounds.width / 2 - canvasCenter.x) < SNAP_THRESHOLD) {
+                    newLeft = canvasCenter.x - objBounds.width / 2;
+                    activeGuides.push({ type: 'vertical', position: canvasCenter.x });
+                    snappedX = true;
+                }
+                if (Math.abs(objBounds.top + objBounds.height / 2 - canvasCenter.y) < SNAP_THRESHOLD) {
+                    newTop = canvasCenter.y - objBounds.height / 2;
+                    activeGuides.push({ type: 'horizontal', position: canvasCenter.y });
+                    snappedY = true;
+                }
+
+                // 2. Magnetic Field Snapping (Euclidean Bounds overlap)
+                objects.forEach(target => {
+                    if (snappedX && snappedY) return; // Skip if already snapped in both axes
+                    
+                    const targetBounds = target.getBoundingRect();
+
+                    // X-axis snapping
+                    if (!snappedX) {
+                        // Left to Left
+                        if (Math.abs(objBounds.left - targetBounds.left) < SNAP_THRESHOLD) {
+                            newLeft = targetBounds.left;
+                            activeGuides.push({ type: 'vertical', position: targetBounds.left });
+                            snappedX = true;
+                        } 
+                        // Right to Right
+                        else if (Math.abs(objBounds.left + objBounds.width - targetBounds.left - targetBounds.width) < SNAP_THRESHOLD) {
+                            newLeft = targetBounds.left + targetBounds.width - objBounds.width;
+                            activeGuides.push({ type: 'vertical', position: targetBounds.left + targetBounds.width });
+                            snappedX = true;
+                        } 
+                        // Center to Center
+                        else if (Math.abs(objBounds.left + objBounds.width / 2 - (targetBounds.left + targetBounds.width / 2)) < SNAP_THRESHOLD) {
+                            newLeft = targetBounds.left + targetBounds.width / 2 - objBounds.width / 2;
+                            activeGuides.push({ type: 'vertical', position: targetBounds.left + targetBounds.width / 2 });
+                            snappedX = true;
+                        }
+                    }
+
+                    // Y-axis snapping
+                    if (!snappedY) {
+                        // Top to Top
+                        if (Math.abs(objBounds.top - targetBounds.top) < SNAP_THRESHOLD) {
+                            newTop = targetBounds.top;
+                            activeGuides.push({ type: 'horizontal', position: targetBounds.top });
+                            snappedY = true;
+                        } 
+                        // Bottom to Bottom
+                        else if (Math.abs(objBounds.top + objBounds.height - targetBounds.top - targetBounds.height) < SNAP_THRESHOLD) {
+                            newTop = targetBounds.top + targetBounds.height - objBounds.height;
+                            activeGuides.push({ type: 'horizontal', position: targetBounds.top + targetBounds.height });
+                            snappedY = true;
+                        } 
+                        // Center to Center
+                        else if (Math.abs(objBounds.top + objBounds.height / 2 - (targetBounds.top + targetBounds.height / 2)) < SNAP_THRESHOLD) {
+                            newTop = targetBounds.top + targetBounds.height / 2 - objBounds.height / 2;
+                            activeGuides.push({ type: 'horizontal', position: targetBounds.top + targetBounds.height / 2 });
+                            snappedY = true;
+                        }
+                    }
+                });
+            }
+
+            obj.set({ left: newLeft, top: newTop });
+            setGuides(activeGuides);
         });
 
         canvas.on('object:added', () => {
@@ -672,8 +769,47 @@ export const FabricCanvas: React.FC = () => {
     }, [activeTool, isDrawing, currentShape, startPoint, setActiveTool, penPath, penPoints, isDraggingHandle, tempHandleCircle]);
 
     return (
-        <div ref={containerRef} className="w-full h-full relative overflow-hidden bg-neutral-200">
+        <div ref={containerRef} className="w-full h-full relative overflow-hidden bg-transparent">
+            {/* Grid Pattern Background */}
+            <div 
+                className="absolute inset-0 z-0 pointer-events-none opacity-20"
+                style={{
+                    backgroundImage: `linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)`,
+                    backgroundSize: `${10}px ${10}px`,
+                    backgroundPosition: 'center center'
+                }}
+            />
+            
             <canvas ref={canvasRef} />
+
+            {/* Smart Guides Overlay (React Layer) */}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none z-50">
+                {guides.map((guide, i) => (
+                    guide.type === 'vertical' ? (
+                        <line 
+                            key={`v-${i}`} 
+                            x1={guide.position} 
+                            y1="0" 
+                            x2={guide.position} 
+                            y2="100%" 
+                            stroke="#d946ef" 
+                            strokeWidth="1" 
+                            strokeDasharray="4 4" 
+                        />
+                    ) : (
+                        <line 
+                            key={`h-${i}`} 
+                            x1="0" 
+                            y1={guide.position} 
+                            x2="100%" 
+                            y2={guide.position} 
+                            stroke="#d946ef" 
+                            strokeWidth="1" 
+                            strokeDasharray="4 4" 
+                        />
+                    )
+                ))}
+            </svg>
         </div>
     );
 };

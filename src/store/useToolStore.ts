@@ -19,6 +19,8 @@ interface ToolStore {
     setIsDrawing: (value: boolean) => void;
     shapeMenuOpen: boolean;
     setShapeMenuOpen: (value: boolean) => void;
+    rightPanelMode: 'properties' | 'claude';
+    setRightPanelMode: (mode: 'properties' | 'claude') => void;
 }
 
 export const useToolStore = create<ToolStore>((set) => ({
@@ -28,4 +30,6 @@ export const useToolStore = create<ToolStore>((set) => ({
     setIsDrawing: (value) => set({ isDrawing: value }),
     shapeMenuOpen: false,
     setShapeMenuOpen: (value) => set({ shapeMenuOpen: value }),
+    rightPanelMode: 'properties',
+    setRightPanelMode: (mode) => set({ rightPanelMode: mode }),
 }));

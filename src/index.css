@@ -1,3 +1,26 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-dark text-gray-100 font-sans antialiased selection:bg-accent selection:text-white;
+    background-image: radial-gradient(circle at 50% 0%, #0E1D3A 0%, #030712 60%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-surface backdrop-blur-xl border border-white/10 shadow-xl rounded-2xl;
+  }
+
+  .glass-button {
+    @apply bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-md transition-all duration-300 rounded-lg;
+  }
+  
+  .glow-button {
+    @apply bg-accent text-white font-medium hover:shadow-glow transition-all duration-300 rounded-lg;
+  }
+}

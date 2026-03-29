@@ -34,9 +34,9 @@ const ToolButton: React.FC<ToolButtonProps> = ({
     return (
         <button
             onClick={onClick}
-            className={`relative flex items-center justify-center h-9 px-2 rounded transition-colors ${active
-                    ? 'bg-blue-600 text-white'
-                    : 'text-neutral-300 hover:bg-neutral-800 hover:text-white'
+            className={`relative flex items-center justify-center h-9 px-2 rounded-lg transition-colors ${active
+                    ? 'bg-accent text-white shadow-glow'
+                    : 'text-gray-400 hover:bg-white/10 hover:text-white'
                 }`}
             title={`${label}${shortcut ? ` (${shortcut})` : ''}`}
         >
@@ -123,7 +123,7 @@ export const BottomToolbar: React.FC = () => {
 
     return (
         <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-40">
-            <div className="bg-neutral-900 rounded-lg shadow-2xl border border-neutral-800 px-2 py-1 flex items-center gap-1">
+            <div className="glass-panel rounded-xl shadow-glow px-2 py-1 flex items-center gap-1">
                 {/* Cursor Tool */}
                 <ToolButton
                     tool="cursor"
@@ -157,7 +157,7 @@ export const BottomToolbar: React.FC = () => {
 
                     {/* Shape Dropdown Menu */}
                     {shapeMenuOpen && (
-                        <div className="absolute bottom-full mb-2 left-0 w-48 bg-neutral-900 rounded-lg shadow-2xl border border-neutral-800 py-2 z-50">
+                        <div className="absolute bottom-full mb-2 left-0 w-48 glass-panel py-2 z-50">
                             {shapeTools.map((shape) => (
                                 <button
                                     key={shape.tool}
@@ -166,8 +166,8 @@ export const BottomToolbar: React.FC = () => {
                                         setShapeMenuOpen(false);
                                     }}
                                     className={`w-full px-4 py-2 text-left text-sm flex items-center justify-between transition-colors ${activeTool === shape.tool
-                                            ? 'bg-blue-600 text-white'
-                                            : 'text-neutral-300 hover:bg-neutral-800 hover:text-white'
+                                            ? 'bg-accent text-white'
+                                            : 'text-gray-300 hover:bg-white/10 hover:text-white'
                                         }`}
                                 >
                                     <div className="flex items-center gap-3">
@@ -175,7 +175,7 @@ export const BottomToolbar: React.FC = () => {
                                         <span>{shape.label}</span>
                                     </div>
                                     {shape.shortcut && (
-                                        <span className="text-xs text-neutral-500">{shape.shortcut}</span>
+                                        <span className="text-xs text-gray-500">{shape.shortcut}</span>
                                     )}
                                 </button>
                             ))}
@@ -204,7 +204,7 @@ export const BottomToolbar: React.FC = () => {
                 />
 
                 {/* Divider */}
-                <div className="w-px h-6 bg-neutral-700 mx-1" />
+                <div className="w-px h-6 bg-white/10 mx-1" />
 
                 {/* Additional tools placeholder */}
                 <div className="flex items-center gap-1 opacity-50">
